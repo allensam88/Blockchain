@@ -159,10 +159,10 @@ def receive_transaction():
         response = {'message': 'missing values'}
         return jsonify(response), 400
 
-        index = blockchain.new_transaction(
-            data['sender'], data['recipient'], data['amount'])
-        response = {'message': f'Transaction will be added to block {index}'}
-        return jsonify(response), 201
+    index = blockchain.new_transaction(
+        data['sender'], data['recipient'], data['amount'])
+    response = {'message': f'Transaction will be added to block {index}'}
+    return jsonify(response), 201
 
 
 @app.route('/mine', methods=['POST'])
