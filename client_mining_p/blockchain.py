@@ -135,23 +135,33 @@ blockchain = Blockchain()
 def mine():
     data = request.get_json()
     # Check that 'proof', and 'id' are present
-    if not data['proof'] and not data['id']:
+    if not data['proof'] or not data['id']:
         # return a 400 error using `jsonify(response)` with a 'message'
         response = {'message': 'bad request'}
         return jsonify(response), 400
 
-    # Return a message indicating success or failure.
-    # Remember, a valid proof should fail for all senders except the first.
+    proof = data['proof']
+
+    # Determine if the proof is valid
+    last_block = blockchain.last_block
+    last_block_string = json.dumps(last_block, sort_keys=True)
+
+    if blockchain.valid_proof(last_block_string, proof):
+        # Forge the new Block by adding it to the chain with the proof
+        previous_hash = blockchain.hash(last_block)
+        block = blockchain.new_block(proof, previous_hash)
+
+        response = {
+            'message': "New Block Forged",
+            'index': block['index'],
+            'transactions': block['transactions'],
+            'proof': block['proof'],
+            'previous_hash': block['previous_hash'],
+        }
+        return jsonify(response), 200
     else:
-        block_string = json.dumps(blockchain.last_block, sort_keys=True)
-        if blockchain.valid_proof(block_string, data['proof']):
-            block_hash = blockchain.hash(blockchain.last_block)
-            blockchain.new_block(data['proof'], block_hash)
-            response = {'message': 'successful'}
-            return jsonify(response), 200
-        else:
-            response = {'message': 'failed'}
-            return jsonify(response), 500
+        response = {'message': 'Invalid proof'}
+        return jsonify(response), 200
 
 # @app.route('/get_mine', methods=['GET'])
 # def mine():
@@ -183,8 +193,9 @@ def full_chain():
 
 
 @app.route('/last_block', methods=['GET'])
-def last_block():
-    return jsonify(blockchain.last_block), 200
+def get_last_block():
+    response = {'last_block': blockchain.last_block}
+    return jsonify(response), 200
 
 
 # Run the program on port 5000
